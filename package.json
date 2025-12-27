@@ -22,8 +22,15 @@
     "express": "^5.2.1"
   },
   
-  "start": "node index.php" 
+  "start": "node index.php" ,
+  
+  "name": "my-package",
+  "scripts": {
+    "build": "babel src -d lib",
+    "test": "jest"
+  }
 }
+
 
 
 
