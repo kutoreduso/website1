@@ -20,5 +20,10 @@
   "homepage": "https://github.com/kutoreduso/website1#readme",
   "dependencies": {
     "express": "^5.2.1"
-  }
+  },
+  
+  "start": "node index.php" 
 }
+
+
+
