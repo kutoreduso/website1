@@ -1,13 +1,9 @@
 <?php
 session_start();
 
-// DATABASE CONNECTION
-$servername = "localhost";
-$username = "root";
-$password = "";
-$dbname = "taskflow_db";
 
-$conn = new mysqli($servername, $username, $password, $dbname);
+
+$conn = new mysqli("sql113.infinityfree.com", "if0_40771057", "keTpieWit7k", "if0_40771057_taskflow");
 
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
@@ -57,7 +53,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <style>
         body { background-color: #f3efdf; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
-        .login-card { 
+        .
+        -card { 
             background: #fbf9f1; 
             border-radius: 2rem; 
             padding: 3rem; 
@@ -148,7 +145,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         <button type="submit" class="btn btn-login w-100 mb-4">SIGN UP</button>
 
-        <p class="small text-muted">Already have an account? <a href="login.php" class="text-dark fw-bold text-decoration-none">Login</a></p>
+        <p class="small text-muted">Already have an account? <a href="../index.php" class="text-dark fw-bold text-decoration-none">Login</a></p>
     </form>
 </div>
 

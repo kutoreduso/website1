@@ -1,0 +1,33 @@
+type User @table {
+  displayName: String!
+  createdAt: Timestamp!
+  email: String
+  photoUrl: String
+}
+
+type TaskList @table {
+  name: String!
+  createdAt: Timestamp!
+  description: String
+  owner: User
+}
+
+type Task @table {
+  title: String!
+  status: String!
+  createdAt: Timestamp!
+  description: String
+  dueDate: Timestamp
+  priority: String
+  completedAt: Timestamp
+  owner: User
+  list: TaskList
+}
+
+type Comment @table {
+  content: String!
+  createdAt: Timestamp!
+  updatedAt: Timestamp
+  author: User
+  task: Task
+}

@@ -1,19 +1,7 @@
 <?php
 session_start();
 
-// 1. SECURITY: Check if user is logged in
-if (!isset($_SESSION['user_id'])) {
-    header("Location: login.php");
-    exit();
-}
-
-// 2. DATABASE CONNECTION
-$servername = "localhost";
-$username = "root";
-$password = "";
-$dbname = "taskflow_db";
-
-$conn = new mysqli($servername, $username, $password, $dbname);
+$conn = new mysqli("sql113.infinityfree.com", "if0_40771057", "keTpieWit7k", "if0_40771057_taskflow");
 if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
 
 // 3. GET LOGGED IN USER ID
@@ -21,21 +9,35 @@ $my_id = $_SESSION['user_id'];
 $fullName = $_SESSION['user_name'];
 $role = $_SESSION['user_role'];
 
-// 4. FETCH TASK COUNTS (Only for this specific user)
+// 4. FETCH TASK COUNTS (WITH DEADLINE LOGIC)
 $todo = 0;
 $progress = 0;
 $done = 0;
+$deadline_count = 0; // <--- New Counter
 
-$stmt = $conn->prepare("SELECT status, COUNT(*) as count FROM tasks WHERE assigned_to = ? GROUP BY status");
+// Fetch status AND deadline for this user
+$stmt = $conn->prepare("SELECT status, deadline FROM tasks WHERE assigned_to = ?");
 $stmt->bind_param("i", $my_id);
 $stmt->execute();
 $result = $stmt->get_result();
 
 while($row = $result->fetch_assoc()) {
-    $status = strtolower($row['status']); 
-    if ($status == 'pending' || $status == 'todo') $todo = $row['count'];
-    if ($status == 'in progress') $progress = $row['count'];
-    if ($status == 'completed' || $status == 'done') $done = $row['count'];
+    $status = strtolower(trim($row['status']));
+    $taskDeadline = $row['deadline'];
+    
+    // Check if overdue: Date is past AND not completed
+    $isOverdue = ($taskDeadline < date('Y-m-d')) && ($status !== 'completed') && ($status !== 'done');
+
+    if ($status == 'completed' || $status == 'done') {
+        $done++;
+    } elseif ($isOverdue) {
+        $deadline_count++; // <--- Count as Deadline
+    } elseif ($status == 'in progress' || $status == 'requesting extension') {
+        $progress++;
+    } else {
+        // Pending / To Do
+        $todo++;
+    }
 }
 $stmt->close();
 ?>
@@ -57,8 +59,8 @@ $stmt->close();
             --card-todo: #98e3ea;
             --card-prog: #dce2b8;
             --card-done: #aebda0;
-            --btn-beige: #f0ebd8;      /* Nav Buttons */
-            --btn-purple: #cec2ff;     /* Active State */
+            --btn-beige: #f0ebd8;
+            --btn-purple: #cec2ff;
         }
 
         body { background-color: var(--bg-color); font-family: 'Segoe UI', sans-serif; overflow-x: hidden; }
@@ -72,52 +74,32 @@ $stmt->close();
             top: 0; left: 0;
             padding: 2rem;
             display: flex;
-            flex-direction: column; /* Stack items vertically */
+            flex-direction: column;
             border-right: 1px solid #eaeaea;
             z-index: 1000;
         }
 
         .logo { font-size: 1.5rem; font-weight: bold; margin-bottom: 3rem; display: flex; align-items: center; gap: 10px; color: #333; }
 
-        /* Nav Links Wrapper */
-        .nav-menu {
-            flex-grow: 1; /* Pushes content down */
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
+        .nav-menu { flex-grow: 1; display: flex; flex-direction: column; gap: 15px; }
 
         .nav-btn {
-            display: block;
-            width: 100%;
-            padding: 12px;
-            border-radius: 12px;
-            text-decoration: none;
-            color: #666;
-            font-weight: 600;
-            background-color: var(--btn-beige);
-            text-align: center;
-            transition: 0.2s;
-            border: none;
+            display: block; width: 100%; padding: 12px; border-radius: 12px;
+            text-decoration: none; color: #666; font-weight: 600;
+            background-color: var(--btn-beige); text-align: center;
+            transition: 0.2s; border: none;
         }
         .nav-btn:hover { background-color: #e6e1cd; color: #333; }
         .nav-btn.active { background-color: var(--btn-purple); color: #333; }
 
-        /* Pinned Logout Button */
         .logout-btn {
-            background-color: var(--btn-beige);
-            color: #000;
-            font-weight: bold;
-            text-align: center;
-            padding: 12px;
-            border-radius: 12px;
-            text-decoration: none;
-            display: block;
-            margin-top: auto; /* Keeps it at the bottom */
+            background-color: var(--btn-beige); color: #000; font-weight: bold;
+            text-align: center; padding: 12px; border-radius: 12px;
+            text-decoration: none; display: block; margin-top: auto;
         }
         .logout-btn:hover { background-color: #e6e1cd; }
 
-        /* --- MAIN CONTENT (Adjusted for Fixed Sidebar) --- */
+        /* --- MAIN CONTENT --- */
         .main-container { 
             padding: 3rem; 
             margin-left: 250px; /* Matches Sidebar Width */
@@ -128,29 +110,26 @@ $stmt->close();
 
         /* --- STAT CARDS --- */
         .stat-card {
-            border-radius: 20px;
-            padding: 2rem;
-            min-height: 140px;
+            border-radius: 20px; padding: 2rem; min-height: 140px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+            display: flex; justify-content: space-between; align-items: center;
         }
         .bg-todo { background-color: var(--card-todo); }
         .bg-prog { background-color: var(--card-prog); }
         .bg-done { background-color: var(--card-done); }
+        
         .stat-label { font-weight: 700; font-size: 1.1rem; color: #000; }
         .stat-badge { background: rgba(0,0,0,0.1); padding: 2px 10px; border-radius: 10px; font-weight: bold; margin-left: 10px; }
 
         /* --- WIDGETS --- */
         .widget-card {
-            background: white;
-            border-radius: 20px;
-            padding: 2rem;
-            height: 100%;
-            min-height: 350px;
+            background: white; border-radius: 20px; padding: 2rem;
+            height: 100%; min-height: 350px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.03);
         }
         .widget-title { font-weight: bold; margin-bottom: 1.5rem; display: flex; justify-content: space-between; }
 
-        /* --- CALENDAR STYLES --- */
+        /* --- CALENDAR STYLES (Responsive) --- */
         .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; gap: 5px; }
         .day-name { font-weight: bold; color: #888; font-size: 0.8rem; margin-bottom: 10px; }
@@ -161,13 +140,37 @@ $stmt->close();
         .date-cell.empty { background: transparent; cursor: default; }
         .btn-cal { border: none; background: transparent; cursor: pointer; font-size: 1.2rem; }
 
-        /* Mobile */
+        /* --- MOBILE RESPONSIVENESS --- */
         .mobile-toggle { font-size: 1.5rem; cursor: pointer; color: #333; margin-right: auto; }
+        
         @media(max-width: 991px) { 
             .sidebar { display: none; } 
-            .main-container { margin-left: 0; }
-            .offcanvas-body { display: flex; flex-direction: column; } /* Flex for mobile menu too */
+            .main-container { margin-left: 0; padding: 1.5rem; }
+            .offcanvas-body { display: flex; flex-direction: column; } 
         }
+
+        @media (max-width: 576px) {
+            .main-container { padding: 1rem; }
+            .widget-card { padding: 1rem; }
+            .date-cell { padding: 8px 2px; font-size: 0.85rem; }
+            .day-name { font-size: 0.75rem; }
+            .stat-card { padding: 1.5rem; }
+        }
+        /* Sidebar Logo Container */
+/* Sidebar Logo Image Style */
+.sidebar-logo-img {
+    width: 60px;       /* Adjust width as needed */
+    height: auto;       /* Keeps the aspect ratio */
+    display: block;     /* Removes extra space below image */
+    margin: 0 auto;     /* Centers the image horizontally */
+}
+
+/* Ensure the container centers content */
+.logo {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 2rem;
+}
     </style>
 </head>
 <body>
@@ -177,22 +180,24 @@ $stmt->close();
     <div class="offcanvas-body">
         <div class="nav-menu">
             <a href="#" class="nav-btn active">DASHBOARD</a>
-            <a href="usertask.php" class="nav-btn">TASK</a> <a href="calendar.php" class="nav-btn">CALENDAR</a>
+            <a href="usertask.php" class="nav-btn">TASK</a> 
         </div>
         <a href="logout.php" class="logout-btn">LOGOUT</a>
     </div>
 </div>
-
 <div class="sidebar d-none d-lg-flex">
-    <div class="logo"><i class="bi bi-kanban"></i> TaskFlow</div>
-    
-    <div class="nav-menu">
-        <a href="#" class="nav-btn active">DASHBOARD</a>
-        <a href="usertask.php" class="nav-btn">TASK</a>
-        <a href="calendar.php" class="nav-btn">CALENDAR</a>
+    <div class="logo">
+        <img src="../imgs/logo.png" alt="TaskFlow Logo" class="sidebar-logo-img">
+        TaskFlow
     </div>
 
-    <a href="logout.php" class="logout-btn">LOGOUT</a>
+    <div class="nav-menu">
+        <a href="dashboard.php" class="nav-btn">DASHBOARD</a>
+        <a href="usertask.php" class="nav-btn active">TASK</a>
+
+       
+    </div>
+    <a href="logout.php" class="logout-btn">Log Out</a>
 </div>
 
 <div class="main-container">
@@ -211,9 +216,9 @@ $stmt->close();
     </div>
 
     <div class="row g-4 mb-4">
-        <div class="col-md-4"><div class="stat-card bg-todo"><span class="stat-label">To do Task <span class="stat-badge"><?php echo $todo; ?></span></span></div></div>
-        <div class="col-md-4"><div class="stat-card bg-prog"><span class="stat-label">In Progress <span class="stat-badge"><?php echo $progress; ?></span></span></div></div>
-        <div class="col-md-4"><div class="stat-card bg-done"><span class="stat-label">Completed <span class="stat-badge"><?php echo $done; ?></span></span></div></div>
+        <div class="col-md-4"><div class="stat-card bg-todo"><span class="stat-label">To do Task</span> <span class="stat-badge"><?php echo $todo; ?></span></div></div>
+        <div class="col-md-4"><div class="stat-card bg-prog"><span class="stat-label">In Progress</span> <span class="stat-badge"><?php echo $progress; ?></span></div></div>
+        <div class="col-md-4"><div class="stat-card bg-done"><span class="stat-label">Completed</span> <span class="stat-badge"><?php echo $done; ?></span></div></div>
     </div>
 
     <div class="row g-4">
@@ -222,9 +227,10 @@ $stmt->close();
                 <div class="widget-title"><span>Project Status</span><i class="bi bi-three-dots"></i></div>
                 <div style="position: relative; height: 200px; display: flex; justify-content: center;"><canvas id="statusChart"></canvas></div>
                 <div class="mt-4 small">
-                    <div class="d-flex justify-content-between mb-2"><span><i class="bi bi-circle-fill text-primary"></i> Completed</span><span class="fw-bold"><?php echo $done; ?></span></div>
-                    <div class="d-flex justify-content-between mb-2"><span><i class="bi bi-circle-fill text-warning"></i> In Progress</span><span class="fw-bold"><?php echo $progress; ?></span></div>
-                    <div class="d-flex justify-content-between"><span><i class="bi bi-circle-fill text-info"></i> To Do</span><span class="fw-bold"><?php echo $todo; ?></span></div>
+                    <div class="d-flex justify-content-between mb-2"><span><i class="bi bi-circle-fill" style="color: #aebda0;"></i> Completed</span><span class="fw-bold"><?php echo $done; ?></span></div>
+                    <div class="d-flex justify-content-between mb-2"><span><i class="bi bi-circle-fill" style="color: #dce2b8;"></i> In Progress</span><span class="fw-bold"><?php echo $progress; ?></span></div>
+                    <div class="d-flex justify-content-between mb-2"><span><i class="bi bi-circle-fill" style="color: #98e3ea;"></i> To Do</span><span class="fw-bold"><?php echo $todo; ?></span></div>
+                    <div class="d-flex justify-content-between"><span><i class="bi bi-circle-fill" style="color: #dc3545;"></i> Deadline</span><span class="fw-bold text-danger"><?php echo $deadline_count; ?></span></div>
                 </div>
             </div>
         </div>
@@ -252,20 +258,38 @@ $stmt->close();
     const todoData = <?php echo $todo; ?>;
     const progData = <?php echo $progress; ?>;
     const doneData = <?php echo $done; ?>;
+    const deadlineData = <?php echo $deadline_count; ?>; // New Data
+    
+    // Total for center text
+    const totalData = todoData + progData + doneData + deadlineData;
 
     const ctx = document.getElementById('statusChart').getContext('2d');
     new Chart(ctx, {
         type: 'doughnut',
         data: {
-            labels: ['Done', 'In Progress', 'Todo'],
+            labels: ['Done', 'In Progress', 'Todo', 'Deadline'],
             datasets: [{
-                data: [doneData, progData, todoData],
-                backgroundColor: ['#4b6cb7', '#d4a017', '#98e3ea'],
+                data: [doneData, progData, todoData, deadlineData],
+                backgroundColor: ['#aebda0', '#dce2b8', '#98e3ea', '#dc3545'], // Red for Deadline
                 borderWidth: 0,
                 cutout: '70%'
             }]
         },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } },
+        plugins: [{
+            id: 'textCenter',
+            beforeDraw: function(chart) {
+                var width = chart.width, height = chart.height, ctx = chart.ctx;
+                ctx.restore();
+                var fontSize = (height / 140).toFixed(2);
+                ctx.font = "bold " + fontSize + "em sans-serif";
+                ctx.textBaseline = "middle";
+                ctx.fillStyle = "#333";
+                var text = totalData, textX = Math.round((width - ctx.measureText(text).width) / 2), textY = height / 2;
+                ctx.fillText(text, textX, textY);
+                ctx.save();
+            }
+        }]
     });
 
     // --- CALENDAR LOGIC ---

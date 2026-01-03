@@ -1,17 +1,13 @@
 <?php
 session_start();
 
-// 1. SECURITY CHECK
-if (!isset($_SESSION['user_id'])) {
-    header("Location: login.php");
-    exit();
-}
 
-// 2. DATABASE CONNECTION
-$servername = "localhost";
-$username = "root";
-$password = "";
-$dbname = "taskflow_db";
+
+// 2. DATABASE CONNECTION (Using your credentials)
+$servername = "sql113.infinityfree.com";
+$username = "if0_40771057";
+$password = "keTpieWit7k";
+$dbname = "if0_40771057_taskflow"; 
 
 $conn = new mysqli($servername, $username, $password, $dbname);
 if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
@@ -92,44 +88,32 @@ $result = $myTasks->get_result();
         }
 
         .nav-btn {
-            display: block;
-            width: 100%;
-            padding: 12px;
-            border-radius: 12px;
-            text-decoration: none;
-            color: #666;
-            font-weight: 600;
-            background-color: var(--btn-beige);
-            text-align: center;
-            transition: 0.2s;
-            border: none;
+            display: block; width: 100%; padding: 12px; border-radius: 12px;
+            text-decoration: none; color: #666; font-weight: 600;
+            background-color: var(--btn-beige); text-align: center;
+            transition: 0.2s; border: none;
         }
         .nav-btn:hover { background-color: #e6e1cd; color: #333; }
         .nav-btn.active { background-color: var(--btn-purple); color: #333; }
 
         /* Pinned Logout Button */
         .logout-btn {
-            background-color: var(--btn-beige);
-            color: #000;
-            font-weight: bold;
-            text-align: center;
-            padding: 12px;
-            border-radius: 12px;
-            text-decoration: none;
-            display: block;
-            margin-top: auto; 
+            background-color: var(--btn-beige); color: #000; font-weight: bold;
+            text-align: center; padding: 12px; border-radius: 12px;
+            text-decoration: none; display: block; margin-top: auto; 
         }
         .logout-btn:hover { background-color: #e6e1cd; }
 
-        /* --- MAIN CONTENT (Adjusted margin) --- */
+        /* --- MAIN CONTENT --- */
         .main-container { 
             padding: 2rem; 
             margin-left: 250px; /* Space for Sidebar */
         }
 
-        /* --- YOUR EXISTING TASK STYLES --- */
+        /* --- TASK LIST DESIGN --- */
         .task-container { background-color: var(--card-bg); border-radius: 20px; padding: 2rem; min-height: 500px; }
         
+        /* Desktop Grid Layout */
         .task-grid-header { display: grid; grid-template-columns: 2fr 3fr 2fr 1fr 1.5fr 0.5fr; font-weight: bold; padding: 0 15px; margin-bottom: 15px; color: #1f1f1f; }
         .task-row { display: grid; grid-template-columns: 2fr 3fr 2fr 1fr 1.5fr 0.5fr; background-color: var(--item-bg); border-radius: 12px; padding: 15px; align-items: center; margin-bottom: 10px; font-size: 0.9rem; }
         
@@ -137,18 +121,59 @@ $result = $myTasks->get_result();
         .status-select:focus { outline: none; }
         .view-link { color: #9c27b0; text-decoration: none; font-weight: bold; font-size: 0.8rem; text-transform: uppercase; cursor: pointer; }
         .dropdown-toggle::after { display: none; }
-        .three-dots-btn { background: none; border: none; padding: 0; color: #333; }
+        .three-dots-btn { background: none; border: none; padding: 0; color: #333; font-size: 1.2rem; }
         
-        /* OVERDUE STYLE */
         .text-overdue { color: #dc3545 !important; font-weight: bold; } 
 
         .mobile-toggle { font-size: 1.5rem; cursor: pointer; color: #333; margin-right: auto; }
         
+        /* --- RESPONSIVE CSS (MOBILE) --- */
         @media(max-width: 991px) { 
             .sidebar { display: none; } 
-            .main-container { margin-left: 0; }
+            .main-container { margin-left: 0; padding: 1rem; }
             .offcanvas-body { display: flex; flex-direction: column; }
+            
+            /* Responsive Task List: Stack items vertically on mobile */
+            .task-grid-header { display: none; } /* Hide Header */
+            
+            .task-row {
+                display: flex;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+                position: relative; /* For absolute menu positioning */
+            }
+            
+            .task-row > span, .task-row > div { width: 100%; }
+            
+            /* User Name Style on Mobile */
+            .task-row span:first-child { font-size: 1.1rem; margin-bottom: 5px; }
+            
+            /* Menu Button Top-Right */
+            .task-row .dropdown.text-end {
+                position: absolute;
+                top: 10px;
+                right: 10px;
+                width: auto;
+            }
+            
+            /* Add labels for clarity */
+            .task-row > span:nth-child(2)::before { content: "Task: "; font-weight: bold; color: #777; }
+            .task-row > span:nth-child(5)::before { content: "Deadline: "; font-weight: bold; color: #777; }
         }
+        .sidebar-logo-img {
+    width: 60px;       /* Adjust width as needed */
+    height: auto;       /* Keeps the aspect ratio */
+    display: block;     /* Removes extra space below image */
+    margin: 0 auto;     /* Centers the image horizontally */
+}
+
+/* Ensure the container centers content */
+.logo {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 2rem;
+}
     </style>
 </head>
 <body>
@@ -159,21 +184,22 @@ $result = $myTasks->get_result();
         <div class="nav-menu">
             <a href="dashboard.php" class="nav-btn">DASHBOARD</a>
             <a href="#" class="nav-btn active">TASK</a>
-            <a href="calendar.php" class="nav-btn">CALENDAR</a>
+
         </div>
         <a href="logout.php" class="logout-btn">Log Out</a>
     </div>
 </div>
 
 <div class="sidebar d-none d-lg-flex">
-    <div class="logo"><i class="bi bi-kanban"></i> TaskFlow</div>
-    
+    <div class="logo">
+        <img src="../imgs/logo.png" alt="TaskFlow Logo" class="sidebar-logo-img">
+        TaskFlow
+    </div>
     <div class="nav-menu">
         <a href="dashboard.php" class="nav-btn">DASHBOARD</a>
         <a href="#" class="nav-btn active">TASK</a>
-        <a href="calendar.php" class="nav-btn">CALENDAR</a>
-    </div>
 
+    </div>
     <a href="logout.php" class="logout-btn">Log Out</a>
 </div>
 
@@ -202,16 +228,20 @@ $result = $myTasks->get_result();
                     <span><?php echo $row['project']; ?></span>
 
                     <div>
-                        <form method="POST">
-                            <input type="hidden" name="update_status" value="1">
-                            <input type="hidden" name="task_id" value="<?php echo $row['id']; ?>">
-                            <select name="status" class="status-select" onchange="this.form.submit()">
-                                <option value="Pending" <?php if($row['status']=='Pending') echo 'selected'; ?>>Pending</option>
-                                <option value="In Progress" <?php if($row['status']=='In Progress') echo 'selected'; ?>>In Progress</option>
-                                <option value="Completed" <?php if($row['status']=='Completed') echo 'selected'; ?>>Completed</option>
-                                <option value="Requesting Extension" <?php if($row['status']=='Requesting Extension') echo 'selected'; ?> disabled>Requesting Ext...</option>
-                            </select>
-                        </form>
+                        <?php if ($isOverdue): ?>
+                            <span class="fw-bold text-danger text-uppercase">Deadline</span>
+                        <?php else: ?>
+                            <form method="POST">
+                                <input type="hidden" name="update_status" value="1">
+                                <input type="hidden" name="task_id" value="<?php echo $row['id']; ?>">
+                                <select name="status" class="status-select" onchange="this.form.submit()">
+                                    <option value="Pending" <?php if($row['status']=='Pending') echo 'selected'; ?>>Pending</option>
+                                    <option value="In Progress" <?php if($row['status']=='In Progress') echo 'selected'; ?>>In Progress</option>
+                                    <option value="Completed" <?php if($row['status']=='Completed') echo 'selected'; ?>>Completed</option>
+                                    <option value="Requesting Extension" <?php if($row['status']=='Requesting Extension') echo 'selected'; ?> disabled>Requesting Ext...</option>
+                                </select>
+                            </form>
+                        <?php endif; ?>
                     </div>
 
                     <span class="view-link" onclick="viewNotes('<?php echo addslashes($row['description'] ?? ''); ?>')">VIEW</span>
@@ -221,7 +251,7 @@ $result = $myTasks->get_result();
                     </span>
 
                     <div class="dropdown text-end">
-                        <button class="three-dots-btn" type="button" data-bs-toggle="dropdown"><i class="bi bi-three-dots-vertical fs-5"></i></button>
+                        <button class="three-dots-btn" type="button" data-bs-toggle="dropdown"><i class="bi bi-three-dots-vertical"></i></button>
                         <ul class="dropdown-menu">
                             <li><a class="dropdown-item" href="#" onclick="openExtensionModal(<?php echo $row['id']; ?>)"><i class="bi bi-calendar-plus me-2"></i>Request Deadline Extension</a></li>
                         </ul>

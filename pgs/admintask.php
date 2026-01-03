@@ -8,12 +8,7 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 // 2. DATABASE CONNECTION
-$servername = "localhost";
-$username = "root";
-$password = "";
-$dbname = "taskflow_db";
-
-$conn = new mysqli($servername, $username, $password, $dbname);
+$conn = new mysqli("sql113.infinityfree.com", "if0_40771057", "keTpieWit7k", "if0_40771057_taskflow");
 if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
 
 // --- HANDLE ADD TASK ---
@@ -192,6 +187,20 @@ $loggedInName = isset($_SESSION['user_name']) ? $_SESSION['user_name'] : "Admin"
             .request-buttons { width: 100%; display: flex; gap: 10px; margin-top: 5px; }
             .btn-accept, .btn-reject { flex: 1; margin: 0; text-align: center; }
         }
+        /* Sidebar Logo Image Style */
+.sidebar-logo-img {
+    width: 60px;       /* Adjust width as needed */
+    height: auto;       /* Keeps the aspect ratio */
+    display: block;     /* Removes extra space below image */
+    margin: 0 auto;     /* Centers the image horizontally */
+}
+
+/* Ensure the container centers content */
+.logo {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 2rem;
+}
     </style>
 </head>
 <body>
@@ -203,19 +212,22 @@ $loggedInName = isset($_SESSION['user_name']) ? $_SESSION['user_name'] : "Admin"
             <a href="admindashboard.php" class="nav-btn">DASHBOARD</a>
             <a href="#" class="nav-btn active">TASK</a>
             <a href="usermanagement.php" class="nav-btn">USERS</a>
-            <a href="calendar.php" class="nav-btn">CALENDAR</a>
+
         </div>
         <a href="logout.php" class="logout-btn">Log Out</a>
     </div>
 </div>
 
 <div class="sidebar d-none d-lg-flex">
-    <div class="logo"><i class="bi bi-kanban"></i> TaskFlow</div>
+    <div class="logo">
+        <img src="../imgs/logo.png" alt="TaskFlow Logo" class="sidebar-logo-img">
+        TaskFlow
+    </div>
     <div class="nav-menu">
         <a href="admindashboard.php" class="nav-btn">DASHBOARD</a>
         <a href="#" class="nav-btn active">TASK</a>
         <a href="usermanagement.php" class="nav-btn">USERS</a>
-        <a href="calendar.php" class="nav-btn">CALENDAR</a>
+
     </div>
     <a href="logout.php" class="logout-btn">Log Out</a>
 </div>
@@ -273,12 +285,21 @@ $loggedInName = isset($_SESSION['user_name']) ? $_SESSION['user_name'] : "Admin"
         </div>
 
         <?php if ($allTasks->num_rows > 0): ?>
-            <?php while($task = $allTasks->fetch_assoc()): ?>
+            <?php while($task = $allTasks->fetch_assoc()): 
+                // --- ADDED LOGIC: CHECK IF OVERDUE ---
+                $isOverdue = ($task['deadline'] < date('Y-m-d')) && ($task['status'] !== 'Completed');
+            ?>
                 <div class="white-row">
                     <div class="task-grid">
                         <span class="fw-bold"><?php echo $task['username']; ?></span>
                         <span><?php echo $task['project']; ?></span>
-                        <span class="status-text"><?php echo $task['status']; ?></span>
+                        
+                        <?php if ($isOverdue): ?>
+                            <span class="status-text text-danger fw-bold text-uppercase">DEADLINE</span>
+                        <?php else: ?>
+                            <span class="status-text"><?php echo $task['status']; ?></span>
+                        <?php endif; ?>
+                        
                         <span class="view-link" onclick="viewNotes('<?php echo addslashes(str_replace(array("\r", "\n"), '', $task['description'] ?? '')); ?>')">VIEW</span>
                         <span class="text-end"><?php echo date("M/d/Y", strtotime($task['deadline'])); ?></span>
                         

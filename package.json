@@ -24,11 +24,8 @@
   
   "start": "node index.php" ,
   
-  "name": "my-package",
-  "scripts": {
-    "build": "babel src -d lib",
-    "test": "jest"
-  }
+  "name": "my-package"
+
 }
 
 

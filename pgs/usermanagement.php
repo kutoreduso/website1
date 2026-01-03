@@ -11,14 +11,7 @@ if (file_exists(__DIR__ . '/PHPMailer/Exception.php')) {
     require __DIR__ . '/PHPMailer/SMTP.php';
 }
 
-// 2. DATABASE CONNECTION
-$servername = "localhost";
-$username = "root";
-$password = "";
-$dbname = "taskflow_db";
-
-$conn = new mysqli($servername, $username, $password, $dbname);
-if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
+$conn = new mysqli("sql113.infinityfree.com", "if0_40771057", "keTpieWit7k", "if0_40771057_taskflow");
 
 // --- ACTION: ACCEPT USER & SEND EMAIL ---
 if (isset($_GET['accept_id'])) {
@@ -190,6 +183,19 @@ $loggedInName = isset($_SESSION['user_name']) ? $_SESSION['user_name'] : "Admin"
             .pending-row > div:last-child { width: 100%; display: flex; gap: 10px; }
             .btn-accept, .btn-reject { flex: 1; padding: 10px; }
         }
+        .sidebar-logo-img {
+    width: 60px;       /* Adjust width as needed */
+    height: auto;       /* Keeps the aspect ratio */
+    display: block;     /* Removes extra space below image */
+    margin: 0 auto;     /* Centers the image horizontally */
+}
+
+/* Ensure the container centers content */
+.logo {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 2rem;
+}
     </style>
 </head>
 <body>
@@ -204,19 +210,22 @@ $loggedInName = isset($_SESSION['user_name']) ? $_SESSION['user_name'] : "Admin"
             <a href="admindashboard.php" class="nav-btn">DASHBOARD</a>
             <a href="admintask.php" class="nav-btn">TASK</a>
             <a href="#" class="nav-btn active">USERS</a>
-            <a href="calendar.php" class="nav-btn">CALENDAR</a>
+
         </div>
         <a href="logout.php" class="logout-btn">Log Out</a>
     </div>
 </div>
 
 <div class="sidebar d-none d-lg-flex">
-    <div class="logo"><i class="bi bi-kanban"></i> TaskFlow</div>
+    <div class="logo">
+        <img src="../imgs/logo.png" alt="TaskFlow Logo" class="sidebar-logo-img">
+        TaskFlow
+    </div>
     <div class="nav-menu">
         <a href="admindashboard.php" class="nav-btn">DASHBOARD</a>
         <a href="admintask.php" class="nav-btn">TASK</a>
         <a href="#" class="nav-btn active">USERS</a>
-        <a href="calendar.php" class="nav-btn">CALENDAR</a>
+
     </div>
     <a href="logout.php" class="logout-btn">Log Out</a>
 </div>
